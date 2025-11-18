@@ -1,6 +1,6 @@
 package ru.stroy1click.notification.service.impl;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RList;
 import org.redisson.api.RTopic;
@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import ru.stroy1click.notification.dto.OrderDto;
 import ru.stroy1click.notification.service.NotificationService;
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -28,9 +29,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     public NotificationServiceImpl(RedissonClient redissonClient) {
         this.redisList = redissonClient.getList(LIST_KEY);
-        this.redisTopic = redissonClient.getTopic(TOPIC_KEY);
+        this.redisList.expire(Duration.ofDays(1));
 
-        loadHistory().subscribe();
+        this.redisTopic = redissonClient.getTopic(TOPIC_KEY);
 
         this.redisTopic.addListener(OrderDto.class, (channel, order) -> {
             this.sink.tryEmitNext(order);
@@ -54,5 +55,10 @@ public class NotificationServiceImpl implements NotificationService {
         return Flux.fromIterable(this.redisList.get())
                 .doOnNext(this.sink::tryEmitNext)
                 .then();
+    }
+
+    @PostConstruct
+    public void init() { //с sinks надо работать только тогда, когда бин полностью сформировался
+        loadHistory().subscribe();
     }
 }
