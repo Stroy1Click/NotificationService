@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: Stroy1Click - NotificationService
+server:
+  port: 2020
