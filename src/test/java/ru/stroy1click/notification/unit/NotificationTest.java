@@ -33,12 +33,11 @@ class NotificationTest {
     private RTopicReactive redisTopic;
 
     private NotificationServiceImpl service;
-
-    private Mono<OrderDto> orderDto;
+    private OrderDto testOrder;
 
     @BeforeEach
     void setUp() {
-        this.orderDto = Mono.just(OrderDto.builder()
+        this.testOrder = OrderDto.builder()
                 .id(1L)
                 .notes("notes")
                 .quantity(5)
@@ -47,65 +46,65 @@ class NotificationTest {
                 .updatedAt(LocalDateTime.now())
                 .productId(100)
                 .userId(777L)
-                .build());
+                .build();
 
-        when(this.redissonReactiveClient.getList("notifications:list"))
-                .thenReturn(this.redisList);
+        when(redissonReactiveClient.getList("notifications:list")).thenReturn(redisList);
+        when(redissonReactiveClient.getTopic("notifications:topic")).thenReturn(redisTopic);
 
-        when(this.redissonReactiveClient.getTopic("notifications:topic"))
-                .thenReturn(this.redisTopic);
-
-        when(this.redisTopic.getMessages(OrderDto.class))
-                .thenReturn(Flux.never());
-
-        when(this.redisList.expire(any(Duration.class))).thenReturn(Mono.empty());
+        when(redisList.expire(Mockito.<Duration>any())).thenReturn(Mono.empty());
+        lenient().when(redisList.readAll()).thenReturn(Mono.just(List.of()));
+        when(redisTopic.getMessages(OrderDto.class)).thenReturn(Flux.never());
 
         this.service = new NotificationServiceImpl(this.redissonReactiveClient);
     }
 
     @Test
     void send_ShouldAddOrderToRedisListAndPublishToTopic_WhenCalled() {
-        // Моки реактивных методов
-        when(this.redisList.add(this.orderDto)).thenReturn(Mono.just(true));
-        when(this.redisTopic.publish(this.orderDto)).thenReturn(Mono.just(1L));
+        when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
+        when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
 
-        StepVerifier.create(this.service.send(this.orderDto))
+        StepVerifier.create(service.send(Mono.just(testOrder)))
                 .verifyComplete();
 
-        verify(this.redisList, times(1)).add(this.orderDto);
-        verify(this.redisTopic, times(1)).publish(this.orderDto);
+        verify(redisList, times(1)).add(any(OrderDto.class));
+        verify(redisTopic, times(1)).publish(any(OrderDto.class));
+    }
+
+    @Test
+    void send_ShouldEmitToSink_WhenOrderProcessed() {
+        when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
+        when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
+
+        StepVerifier.create(service.send(Mono.just(testOrder)).thenMany(service.getOrders().next()))
+                .expectNext(testOrder)
+                .verifyComplete();
+
+        verify(redisList, times(1)).add(any(OrderDto.class));
     }
 
     @Test
     void loadHistory_ShouldEmitOrdersIntoSink_WhenHistoryExists() {
-        OrderDto o1 = OrderDto.builder()
-                .id(2L)
-                .notes("more")
-                .quantity(3)
-                .orderStatus(OrderStatus.CREATED)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .productId(200)
-                .userId(888L)
-                .build();
-        OrderDto o2 = OrderDto.builder()
-                .id(2L)
-                .notes("more")
-                .quantity(3)
-                .orderStatus(OrderStatus.CREATED)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .productId(200)
-                .userId(888L)
-                .build();
+        OrderDto o1 = OrderDto.builder().id(2L).notes("first").quantity(3).build();
+        OrderDto o2 = OrderDto.builder().id(3L).notes("second").quantity(1).build();
 
-        when(this.redisList.readAll()).thenReturn(Mono.just(List.of(o1, o2)));
+        when(redisList.readAll()).thenReturn(Mono.just(List.of(o1, o2)));
 
-        this.service.init(); // loadHistory() вызывается в init()
+        NotificationServiceImpl service = new NotificationServiceImpl(redissonReactiveClient);
 
-        StepVerifier.create(this.service.getOrders().take(2))
+        StepVerifier.create(service.loadHistory().thenMany(service.getOrders().take(2)))
                 .expectNext(o1)
                 .expectNext(o2)
+                .verifyComplete();
+    }
+
+    @Test
+    void getOrders_ShouldReturnFlux_WhenSubscribed() {
+        when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
+        when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
+
+        StepVerifier.create(service.send(Mono.just(testOrder))
+                        .thenMany(service.getOrders().take(1)))
+                .expectNext(testOrder)
                 .verifyComplete();
     }
 }
