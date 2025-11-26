@@ -6,7 +6,7 @@ import ru.stroy1click.notification.dto.OrderDto;
 
 public interface NotificationService {
 
-    Mono<Void> send(OrderDto orderDto);
+    Mono<Void> send(Mono<OrderDto> orderDto);
 
     Flux<OrderDto> getOrders();
 }
