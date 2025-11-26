@@ -52,7 +52,7 @@ public class NotificationServiceImpl implements NotificationService {
         return this.sink.asFlux();
     }
 
-    private Mono<Void> loadHistory() {
+    public Mono<Void> loadHistory() {
         return redisList.readAll() // Mono<List<OrderDto>>
                 .flatMapMany(Flux::fromIterable)
                 .doOnNext(sink::tryEmitNext)

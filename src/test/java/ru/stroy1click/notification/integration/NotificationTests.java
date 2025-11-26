@@ -1,5 +1,6 @@
 package ru.stroy1click.notification.integration;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,8 +10,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import ru.stroy1click.notification.dto.OrderDto;
 import ru.stroy1click.notification.model.OrderStatus;
+import ru.stroy1click.notification.service.NotificationService;
+import ru.stroy1click.notification.service.impl.NotificationServiceImpl;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +25,9 @@ public class NotificationTests {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @Autowired
+    private NotificationService notificationService;
 
     private OrderDto orderDto;
 
@@ -71,11 +78,25 @@ public class NotificationTests {
 
     @Test
     public void getNotifications_ShouldReturnNotifications(){
+        this.notificationService.send(Mono.just(new OrderDto())).block();
+        this.notificationService.send(Mono.just(new OrderDto())).block();
+        this.notificationService.send(Mono.just(new OrderDto())).block();
+
         this.webTestClient.get()
                 .uri("/api/v1/notifications")
                 .exchange()
                 .expectStatus().is2xxSuccessful()
-                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM);
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+                .returnResult(OrderDto.class)
+                .getResponseBody()
+                .take(3)
+                .collectList()
+                .as(StepVerifier::create)
+                .assertNext(i -> {
+                    Assertions.assertEquals(3, i.size());
+                })
+                .expectComplete()
+                .verify();
     }
 
 }
