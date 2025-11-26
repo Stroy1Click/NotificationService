@@ -2,9 +2,7 @@ package ru.stroy1click.notification.service.impl;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RList;
-import org.redisson.api.RTopic;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,31 +17,34 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final Sinks.Many<OrderDto> sink = Sinks.many().replay().limit(100);
 
-    private final RList<OrderDto> redisList;
+    private final RListReactive<OrderDto> redisList;
 
-    private final RTopic redisTopic;
+    private final RTopicReactive redisTopic;
 
     private static final String LIST_KEY = "notifications:list";
 
     private static final String TOPIC_KEY = "notifications:topic";
 
-    public NotificationServiceImpl(RedissonClient redissonClient) {
-        this.redisList = redissonClient.getList(LIST_KEY);
-        this.redisList.expire(Duration.ofDays(1));
+    public NotificationServiceImpl(RedissonReactiveClient client) {
+        this.redisList = client.getList(LIST_KEY);
+        this.redisList.expire(Duration.ofDays(1)).subscribe();
 
-        this.redisTopic = redissonClient.getTopic(TOPIC_KEY);
+        RTopicReactive topic = client.getTopic(TOPIC_KEY);
 
-        this.redisTopic.addListener(OrderDto.class, (channel, order) -> {
-            this.sink.tryEmitNext(order);
-        });
+        topic.getMessages(OrderDto.class)
+                .doOnNext(sink::tryEmitNext)
+                .subscribe();
+
+        this.redisTopic = topic;
     }
 
     @Override
-    public Mono<Void> send(OrderDto orderDto) {
-        return Mono.just(orderDto)
-                .doOnNext(this.redisList::addFirst)
-                .doOnNext(this.redisTopic::publish)
-                .then();
+    public Mono<Void> send(Mono<OrderDto> orderDto) {
+        return orderDto.flatMap(order ->
+                redisList.add(order)
+                        .then(redisTopic.publish(order))
+                        .then(Mono.fromRunnable(() -> sink.tryEmitNext(order)))
+        ).then();
     }
 
     @Override
@@ -51,9 +52,10 @@ public class NotificationServiceImpl implements NotificationService {
         return this.sink.asFlux();
     }
 
-    private Mono<Void> loadHistory(){
-        return Flux.fromIterable(this.redisList.get())
-                .doOnNext(this.sink::tryEmitNext)
+    private Mono<Void> loadHistory() {
+        return redisList.readAll() // Mono<List<OrderDto>>
+                .flatMapMany(Flux::fromIterable)
+                .doOnNext(sink::tryEmitNext)
                 .then();
     }
 
