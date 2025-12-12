@@ -1,6 +1,10 @@
 spring:
   application:
     name: Stroy1Click - NotificationService
+  profiles:
+    active: dev
+  config:
+    import: application-prod.yml
 server:
   port: 2020
 
@@ -10,7 +14,7 @@ redisson:
 
 otel:
   service:
-    name: "auth-service"
+    name: "notification-service"
   traces:
     exporter: "otlp"
     sampler: "always_on"
