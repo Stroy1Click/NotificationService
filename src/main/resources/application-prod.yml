@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: Stroy1Click - NotificationService
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 2020
+
+redisson:
+  host: localhost
+  port: 6379
+
+otel:
+  service:
+    name: "notification-service"
+  traces:
+    exporter: "otlp"
+    sampler: "always_on"
+  metrics:
+    exporter: "otlp"
+    export:
+      interval: 5000
+  logs:
+    exporter: "otlp"
+  exporter:
+    otlp:
+      protocol: "grpc"
+      endpoint: "http://localhost:4317"

@@ -29,8 +29,9 @@ public class NotificationController {
 
     @PostMapping
     @Operation(summary = "Отправить новый заказ")
-    public Mono<Void> sendNotification(@RequestBody Mono<OrderDto> orderDto) {
-        return orderDto.transform(this.orderValidator.validate())
+    public Mono<Void> sendNotification(@RequestBody OrderDto orderDto) {
+        System.out.println(orderDto);
+        return Mono.just(orderDto).transform(this.orderValidator.validate())
                 .as(this.notificationService::send);
     }
 }

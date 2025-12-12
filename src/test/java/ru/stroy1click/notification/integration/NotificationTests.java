@@ -12,11 +12,12 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import ru.stroy1click.notification.dto.OrderDto;
+import ru.stroy1click.notification.dto.OrderItemDto;
 import ru.stroy1click.notification.model.OrderStatus;
 import ru.stroy1click.notification.service.NotificationService;
-import ru.stroy1click.notification.service.impl.NotificationServiceImpl;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Import({TestcontainersConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -36,11 +37,10 @@ public class NotificationTests {
         this.orderDto = OrderDto.builder()
                 .id(1L)
                 .notes("Test notes")
-                .quantity(5)
+                .orderItems(List.of(new OrderItemDto(1L, 5, 100)))
                 .orderStatus(OrderStatus.CREATED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .productId(100)
                 .userId(777L)
                 .build();
     }
@@ -60,11 +60,10 @@ public class NotificationTests {
         Mono<OrderDto> notValidOrderDto = Mono.just(OrderDto.builder()
                 .id(1L)
                 .notes("Test notes")
-                .quantity(-5)
+                .orderItems(List.of(new OrderItemDto(1L, 5, -100)))
                 .orderStatus(OrderStatus.CREATED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .productId(100)
                 .userId(777L)
                 .build());
         this.webTestClient.post()
@@ -73,7 +72,7 @@ public class NotificationTests {
                 .exchange()
                 .expectStatus().is4xxClientError()
                 .expectBody()
-                .jsonPath("$.detail").isEqualTo("Количество единиц товара не может быть пустым или быть меньше нуля");
+                .jsonPath("$.detail").isEqualTo("OrderItems должны валидными: id, количество, product id не могут быть пустыми и должны быть больше нуля");
     }
 
     @Test

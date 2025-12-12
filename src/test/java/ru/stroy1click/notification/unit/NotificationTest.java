@@ -6,11 +6,11 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.redisson.api.*;
-import org.redisson.api.listener.MessageListener;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import ru.stroy1click.notification.dto.OrderDto;
+import ru.stroy1click.notification.dto.OrderItemDto;
 import ru.stroy1click.notification.model.OrderStatus;
 import ru.stroy1click.notification.service.impl.NotificationServiceImpl;
 
@@ -40,11 +40,10 @@ class NotificationTest {
         this.testOrder = OrderDto.builder()
                 .id(1L)
                 .notes("notes")
-                .quantity(5)
+                .orderItems(List.of(new OrderItemDto(null, 5, 100)))
                 .orderStatus(OrderStatus.CREATED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .productId(100)
                 .userId(777L)
                 .build();
 
@@ -84,8 +83,8 @@ class NotificationTest {
 
     @Test
     void loadHistory_ShouldEmitOrdersIntoSink_WhenHistoryExists() {
-        OrderDto o1 = OrderDto.builder().id(2L).notes("first").quantity(3).build();
-        OrderDto o2 = OrderDto.builder().id(3L).notes("second").quantity(1).build();
+        OrderDto o1 = OrderDto.builder().id(2L).notes("first").build();
+        OrderDto o2 = OrderDto.builder().id(3L).notes("second").build();
 
         when(redisList.readAll()).thenReturn(Mono.just(List.of(o1, o2)));
 

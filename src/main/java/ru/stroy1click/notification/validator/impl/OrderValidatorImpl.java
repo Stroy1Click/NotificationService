@@ -26,9 +26,8 @@ public class OrderValidatorImpl implements OrderValidator {
         Map<Predicate<OrderDto>, String> validators = Map.of(
                 hasValidId(), "validation.orderdto.id",
                 hasValidUserId(), "validation.orderdto.user_id",
-                hasValidProductId(), "validation.orderdto.product_id",
+                hasValidOrderItems(), "validation.orderdto.order_items",
                 hasValidNotes(), "validation.orderdto.notes",
-                hasValidQuantity(), "validation.orderdto.quantity",
                 hasValidOrderStatus(), "validation.orderdto.order_status",
                 hasValidCreateAtDate(), "validation.orderdto.created_at",
                 hasValidUpdatedAtDate(), "validation.orderdto.updated_at"
@@ -56,8 +55,12 @@ public class OrderValidatorImpl implements OrderValidator {
     private Predicate<OrderDto> hasValidUserId(){
         return dto -> Objects.nonNull(dto.getUserId()) && dto.getUserId() > 0;
     }
-    private Predicate<OrderDto> hasValidProductId(){
-        return dto -> Objects.nonNull(dto.getProductId()) && dto.getProductId() > 0;
+    private Predicate<OrderDto> hasValidOrderItems(){
+        return dto -> !dto.getOrderItems().stream()
+                .filter(Objects::nonNull)
+                .filter(orderItemDto -> orderItemDto.getProductId() > 0
+                && orderItemDto.getQuantity() > 0)
+                .toList().isEmpty() ;
     }
     private Predicate<OrderDto> hasValidNotes(){
         return dto -> Objects.nonNull(dto.getNotes());
@@ -69,11 +72,6 @@ public class OrderValidatorImpl implements OrderValidator {
                     .anyMatch(status -> status.name().equals(dto.getOrderStatus().toString()));
         };
     }
-
-    private Predicate<OrderDto> hasValidQuantity(){
-        return dto -> Objects.nonNull(dto.getQuantity()) && dto.getQuantity() > 0;
-    }
-
     private Predicate<OrderDto> hasValidCreateAtDate(){
         return dto -> Objects.nonNull(dto.getCreatedAt())
                 && dto.getCreatedAt().isBefore(LocalDateTime.now());

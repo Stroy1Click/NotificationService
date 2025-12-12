@@ -27,12 +27,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     public NotificationServiceImpl(RedissonReactiveClient client) {
         this.redisList = client.getList(LIST_KEY);
-        this.redisList.expire(Duration.ofDays(1)).subscribe();
+        this.redisList.expire(Duration.ofDays(2)).subscribe();
 
         RTopicReactive topic = client.getTopic(TOPIC_KEY);
 
         topic.getMessages(OrderDto.class)
-                .doOnNext(sink::tryEmitNext)
+                .doOnNext(this.sink::tryEmitNext)
                 .subscribe();
 
         this.redisTopic = topic;
@@ -40,22 +40,25 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public Mono<Void> send(Mono<OrderDto> orderDto) {
-        return orderDto.flatMap(order ->
-                redisList.add(order)
-                        .then(redisTopic.publish(order))
-                        .then(Mono.fromRunnable(() -> sink.tryEmitNext(order)))
+        return orderDto
+                .doOnNext(dto -> log.info("send {}", dto))
+                .flatMap(order ->
+                this.redisList.add(order)
+                        .then(this.redisTopic.publish(order))
+                        .then(Mono.fromRunnable(() -> this.sink.tryEmitNext(order)))
         ).then();
     }
 
     @Override
     public Flux<OrderDto> getOrders() {
+        log.info("getOrders");
         return this.sink.asFlux();
     }
 
     public Mono<Void> loadHistory() {
-        return redisList.readAll() // Mono<List<OrderDto>>
+        return this.redisList.readAll() // Mono<List<OrderDto>>
                 .flatMapMany(Flux::fromIterable)
-                .doOnNext(sink::tryEmitNext)
+                .doOnNext(this.sink::tryEmitNext)
                 .then();
     }
 
