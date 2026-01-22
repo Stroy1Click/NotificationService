@@ -32,7 +32,12 @@ public class NotificationServiceImpl implements NotificationService {
         RTopicReactive topic = client.getTopic(TOPIC_KEY);
 
         topic.getMessages(OrderDto.class)
-                .doOnNext(this.sink::tryEmitNext)
+                .doOnNext(order -> {
+                    Sinks.EmitResult result = sink.tryEmitNext(order);
+                    if (!result.isSuccess()) log.warn("Не удалось добавить заказ в sink: {}", result);
+                })
+                .doOnError(e -> log.error("Ошибка получения сообщений из топика", e))
+                .retry()
                 .subscribe();
 
         this.redisTopic = topic;
@@ -42,28 +47,40 @@ public class NotificationServiceImpl implements NotificationService {
     public Mono<Void> send(Mono<OrderDto> orderDto) {
         return orderDto
                 .doOnNext(dto -> log.info("send {}", dto))
-                .flatMap(order ->
-                this.redisList.add(order)
+                .flatMap(order -> this.redisList.add(order)
                         .then(this.redisTopic.publish(order))
-                        .then(Mono.fromRunnable(() -> this.sink.tryEmitNext(order)))
-        ).then();
+                        .then(Mono.fromRunnable(() -> {
+                            Sinks.EmitResult result = this.sink.tryEmitNext(order);
+                            if (!result.isSuccess()) {
+                                log.warn("Не удалось отправить заказ в sink: {}", result);
+                            }
+                        }))
+                )
+                .doOnError(e -> log.error("Ошибка отправки заказа ", e))
+                .then();
     }
 
     @Override
-    public Flux<OrderDto> getOrders() {
-        log.info("getOrders");
+    public Flux<OrderDto> getNewOrders() {
+        log.info("getNewOrders");
         return this.sink.asFlux();
     }
 
     public Mono<Void> loadHistory() {
         return this.redisList.readAll() // Mono<List<OrderDto>>
                 .flatMapMany(Flux::fromIterable)
-                .doOnNext(this.sink::tryEmitNext)
+                .doOnNext(order -> {
+                    Sinks.EmitResult result = sink.tryEmitNext(order);
+                    if (!result.isSuccess()) log.warn("Не удалось добавить заказ в sink: {}", result);
+                })
                 .then();
     }
 
     @PostConstruct
     public void init() { //с sinks надо работать только тогда, когда бин полностью сформировался
-        loadHistory().subscribe();
+        loadHistory()
+                .doOnError(e -> log.error("Ошибка загрузки истории ", e))
+                .retry()
+                .subscribe();
     }
 }

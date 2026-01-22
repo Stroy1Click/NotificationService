@@ -74,7 +74,7 @@ class NotificationTest {
         when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
         when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
 
-        StepVerifier.create(service.send(Mono.just(testOrder)).thenMany(service.getOrders().next()))
+        StepVerifier.create(service.send(Mono.just(testOrder)).thenMany(service.getNewOrders().next()))
                 .expectNext(testOrder)
                 .verifyComplete();
 
@@ -90,7 +90,7 @@ class NotificationTest {
 
         NotificationServiceImpl service = new NotificationServiceImpl(redissonReactiveClient);
 
-        StepVerifier.create(service.loadHistory().thenMany(service.getOrders().take(2)))
+        StepVerifier.create(service.loadHistory().thenMany(service.getNewOrders().take(2)))
                 .expectNext(o1)
                 .expectNext(o2)
                 .verifyComplete();
@@ -102,7 +102,7 @@ class NotificationTest {
         when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
 
         StepVerifier.create(service.send(Mono.just(testOrder))
-                        .thenMany(service.getOrders().take(1)))
+                        .thenMany(service.getNewOrders().take(1)))
                 .expectNext(testOrder)
                 .verifyComplete();
     }

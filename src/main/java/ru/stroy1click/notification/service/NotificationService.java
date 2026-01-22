@@ -8,5 +8,5 @@ public interface NotificationService {
 
     Mono<Void> send(Mono<OrderDto> orderDto);
 
-    Flux<OrderDto> getOrders();
+    Flux<OrderDto> getNewOrders();
 }
