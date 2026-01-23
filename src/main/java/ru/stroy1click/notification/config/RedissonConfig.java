@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RedissonConfig {
 
-    @Value("${redisson.host}")
+    @Value("${redisson.host:redis}")
     private String host;
 
-    @Value("${redisson.port}")
+    @Value("${redisson.port:6379}")
     private Integer port;
 
     @Bean(destroyMethod = "shutdown")

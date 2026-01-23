@@ -23,8 +23,8 @@ public class NotificationController {
 
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "Получить новые заказы в формате SSE")
-    public Flux<OrderDto> getNotification() {
-        return this.notificationService.getOrders();
+    public Flux<OrderDto> getNewNotification() {
+        return this.notificationService.getNewOrders();
     }
 
     @PostMapping

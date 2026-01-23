@@ -47,38 +47,38 @@ class NotificationTest {
                 .userId(777L)
                 .build();
 
-        when(redissonReactiveClient.getList("notifications:list")).thenReturn(redisList);
-        when(redissonReactiveClient.getTopic("notifications:topic")).thenReturn(redisTopic);
+        when(this.redissonReactiveClient.getList("notifications:list")).thenReturn(this.redisList);
+        when(this.redissonReactiveClient.getTopic("notifications:topic")).thenReturn(this.redisTopic);
 
-        when(redisList.expire(Mockito.<Duration>any())).thenReturn(Mono.empty());
-        lenient().when(redisList.readAll()).thenReturn(Mono.just(List.of()));
-        when(redisTopic.getMessages(OrderDto.class)).thenReturn(Flux.never());
+        when(this.redisList.expire(Mockito.<Duration>any())).thenReturn(Mono.empty());
+        lenient().when(this.redisList.readAll()).thenReturn(Mono.just(List.of()));
+        when(this.redisTopic.getMessages(OrderDto.class)).thenReturn(Flux.never());
 
         this.service = new NotificationServiceImpl(this.redissonReactiveClient);
     }
 
     @Test
     void send_ShouldAddOrderToRedisListAndPublishToTopic_WhenCalled() {
-        when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
-        when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
+        when(this.redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
+        when(this.redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
 
-        StepVerifier.create(service.send(Mono.just(testOrder)))
+        StepVerifier.create(this.service.send(Mono.just(this.testOrder)))
                 .verifyComplete();
 
-        verify(redisList, times(1)).add(any(OrderDto.class));
-        verify(redisTopic, times(1)).publish(any(OrderDto.class));
+        verify(this.redisList, times(1)).add(any(OrderDto.class));
+        verify(this.redisTopic, times(1)).publish(any(OrderDto.class));
     }
 
     @Test
     void send_ShouldEmitToSink_WhenOrderProcessed() {
-        when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
-        when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
+        when(this.redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
+        when(this.redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
 
-        StepVerifier.create(service.send(Mono.just(testOrder)).thenMany(service.getOrders().next()))
-                .expectNext(testOrder)
+        StepVerifier.create(this.service.send(Mono.just(this.testOrder)).thenMany(this.service.getNewOrders().next()))
+                .expectNext(this.testOrder)
                 .verifyComplete();
 
-        verify(redisList, times(1)).add(any(OrderDto.class));
+        verify(this.redisList, times(1)).add(any(OrderDto.class));
     }
 
     @Test
@@ -86,11 +86,11 @@ class NotificationTest {
         OrderDto o1 = OrderDto.builder().id(2L).notes("first").build();
         OrderDto o2 = OrderDto.builder().id(3L).notes("second").build();
 
-        when(redisList.readAll()).thenReturn(Mono.just(List.of(o1, o2)));
+        when(this.redisList.readAll()).thenReturn(Mono.just(List.of(o1, o2)));
 
-        NotificationServiceImpl service = new NotificationServiceImpl(redissonReactiveClient);
+        NotificationServiceImpl service = new NotificationServiceImpl(this.redissonReactiveClient);
 
-        StepVerifier.create(service.loadHistory().thenMany(service.getOrders().take(2)))
+        StepVerifier.create(service.loadHistory().thenMany(service.getNewOrders().take(2)))
                 .expectNext(o1)
                 .expectNext(o2)
                 .verifyComplete();
@@ -98,12 +98,12 @@ class NotificationTest {
 
     @Test
     void getOrders_ShouldReturnFlux_WhenSubscribed() {
-        when(redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
-        when(redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
+        when(this.redisList.add(any(OrderDto.class))).thenReturn(Mono.just(true));
+        when(this.redisTopic.publish(any(OrderDto.class))).thenReturn(Mono.just(1L));
 
-        StepVerifier.create(service.send(Mono.just(testOrder))
-                        .thenMany(service.getOrders().take(1)))
-                .expectNext(testOrder)
+        StepVerifier.create(this.service.send(Mono.just(this.testOrder))
+                        .thenMany(this.service.getNewOrders().take(1)))
+                .expectNext(this.testOrder)
                 .verifyComplete();
     }
 }
