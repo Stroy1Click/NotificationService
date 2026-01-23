@@ -1,6 +1,13 @@
 spring:
   application:
     name: Stroy1Click - NotificationService
+  data:
+    redis:
+      host: redis
+      port: 6379
+  cache:
+    type: redis
+    cache-names: redis-cache
   config:
     activate:
       on-profile: prod
@@ -8,7 +15,7 @@ server:
   port: 2020
 
 redisson:
-  host: localhost
+  host: redis
   port: 6379
 
 otel:
