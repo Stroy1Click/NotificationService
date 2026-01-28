@@ -9,7 +9,7 @@ spring:
   application:
     name: Stroy1Click - NotificationService
   profiles:
-    active: prod
+    active: dev
   config:
     import: application-prod.yml
 server:
@@ -18,6 +18,8 @@ server:
 redisson:
   host: localhost
   port: 6379
+  username: default
+  password: ^7-Pr-ZJzths8p
 
 otel:
   service:

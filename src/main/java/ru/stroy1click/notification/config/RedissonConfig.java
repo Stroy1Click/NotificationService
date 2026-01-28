@@ -16,13 +16,21 @@ public class RedissonConfig {
     @Value("${redisson.port:6379}")
     private Integer port;
 
+    @Value(value = "${redisson.username}")
+    private String username;
+
+    @Value(value = "${redisson.password}")
+    private String password;
+
     @Bean(destroyMethod = "shutdown")
     public RedissonReactiveClient redissonClient() {
         Config config = new Config();
 
         config.useSingleServer()
                 .setAddress("redis://%s:%d".formatted(this.host, this.port))
-                .setDatabase(0);
+                .setDatabase(0)
+                .setUsername(this.username)
+                .setPassword(this.password);
 
         return Redisson.create(config).reactive();
     }

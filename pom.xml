@@ -135,7 +135,7 @@
                     <verbose>true</verbose>
                     <images>
                         <image>
-                            <name>${docker.image.prefix}/${docker.image.name}</name>
+                            <name>${docker.image.prefix}/${docker.image.name}-arm64</name>
                             <build>
                                 <dockerFileDir>${project.basedir}</dockerFileDir>
                                 <assembly>
