@@ -17,6 +17,8 @@ server:
 redisson:
   host: redis
   port: 6379
+  username: default
+  password: password
 
 otel:
   service:

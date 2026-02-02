@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import ru.stroy1click.notification.dto.OrderDto;
 import ru.stroy1click.notification.exception.ValidationException;
-import ru.stroy1click.notification.model.OrderStatus;
+import ru.stroy1click.notification.dto.OrderStatus;
 import ru.stroy1click.notification.validator.OrderValidator;
 
 import java.time.LocalDateTime;

@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import ru.stroy1click.notification.dto.OrderDto;
 import ru.stroy1click.notification.dto.OrderItemDto;
-import ru.stroy1click.notification.model.OrderStatus;
+import ru.stroy1click.notification.dto.OrderStatus;
 import ru.stroy1click.notification.service.impl.NotificationServiceImpl;
 
 import java.time.Duration;
