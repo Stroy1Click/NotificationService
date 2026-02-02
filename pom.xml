@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ru.stroy1click</groupId>
-    <artifactId>Stroy1Click-NotificationService</artifactId>
+    <artifactId>notification-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Stroy1Click - NotificationService</name>
-    <description>Stroy1Click - NotificationService</description>
+    <name>NotificationService</name>
+    <description>Сервис отправки уведомлений</description>
     <url/>
     <licenses>
         <license/>
