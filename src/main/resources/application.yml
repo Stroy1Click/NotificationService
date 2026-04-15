@@ -12,6 +12,9 @@ spring:
     active: dev
   config:
     import: application-prod.yml
+  threads:
+    virtual:
+      enabled: true
 server:
   port: 2020
 

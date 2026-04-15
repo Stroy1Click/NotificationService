@@ -11,6 +11,9 @@ spring:
   config:
     activate:
       on-profile: prod
+  threads:
+    virtual:
+      enabled: true
 server:
   port: 2020
 
