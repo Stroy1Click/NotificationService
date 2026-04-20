@@ -1,4 +1,4 @@
-package ru.stroy1click.notification.unit;
+package ru.stroy1click.notification.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class NotificationTest {
+class NotificationServiceTest {
 
     @Mock
     private RedissonReactiveClient redissonReactiveClient;
