@@ -1,7 +1,7 @@
-package ru.stroy1click.notification;
+package ru.stroy1click.notification.integration;
 
 import org.springframework.boot.SpringApplication;
-import ru.stroy1click.notification.config.TestcontainersConfiguration;
+import ru.stroy1click.notification.Stroy1ClickNotificationServiceApplication;
 
 public class TestStroy1ClickNotificationServiceApplication {
 

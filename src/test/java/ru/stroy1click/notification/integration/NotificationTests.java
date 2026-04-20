@@ -1,4 +1,4 @@
-package ru.stroy1click.notification.controller;
+package ru.stroy1click.notification.integration;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import ru.stroy1click.notification.config.TestcontainersConfiguration;
 import ru.stroy1click.notification.dto.OrderDto;
 import ru.stroy1click.notification.dto.OrderItemDto;
 import ru.stroy1click.notification.dto.OrderStatus;
@@ -23,7 +22,7 @@ import java.util.List;
 @Import({TestcontainersConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-public class NotificationControllerIT {
+public class NotificationTests {
 
     @Autowired
     private WebTestClient webTestClient;
